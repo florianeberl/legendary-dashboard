@@ -1,24 +1,22 @@
 #include <Arduino.h>
+#include <Wire.h>
 
-// Environment sensor includes and defines
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h>
-#define BME280_ADDR (0x76)
-#define PRESSURE_MEASUREMENT_CALIBRATION (6000)
-#define SEALEVEL_PRESSURE (1013.25)
-#define SEALEVEL_PRESSURE_CALIBRATION (9.65)
+#include <GxEPD.h>
+#include <GxGDEW042Z15/GxGDEW042Z15.h>    // 4.2" b/w/r
+#include <GxIO/GxIO_SPI/GxIO_SPI.h>
+#include <GxIO/GxIO.h>
+#include GxEPD_BitmapExamples
 
-Adafruit_BME280 bme; // I2C
+GxIO_Class io(SPI, /*CS=D8*/ SS, /*DC=D3*/ 0, /*RST=D4*/ 16);
+GxEPD_Class display(io, /*RST=D4*/ 16, /*BUSY=D6*/ 12);
+#define HAS_RED_COLOR
 
-#include <statistics.h>
-Statistics tempStats;
-Statistics humStats;
-Statistics pressStats;
+// FreeFonts from Adafruit_GFX
+#include <Fonts/FreeMonoBold9pt7b.h>
+#include <Fonts/FreeMonoBold12pt7b.h>
+#include <Fonts/FreeMonoBold18pt7b.h>
+#include <Fonts/FreeMonoBold24pt7b.h>
 
-// Global Variables
-float currentTemperatureCelsius = 0;
-float currentHumidityPercent = 0;
-float currentPressurePascal = 0;
 int frameCounter = 0;
 
 // run once on startup
@@ -26,66 +24,49 @@ void setup()
 {
   // Setup serial connection for debugging
   Serial.begin(115200);
+  display.init(115200);
+  display.setTextColor(GxEPD_BLACK);  
+  display.setFont(&FreeMonoBold24pt7b); 
+  display.eraseDisplay();
+  Serial.println("\nSetup done!");
+}
 
-  // Initialize Environment Sensor
-  if (!bme.begin(BME280_ADDR, &Wire))
-  {
-    Serial.println("[ ERROR ] - Could not find a BME280 sensor, check wiring!");
-    while (1)
-      ;
-  }
-
-  // Setup Environment Sensor
-  bme.setSampling(Adafruit_BME280::MODE_NORMAL,     /* Operating Mode. */
-                  Adafruit_BME280::SAMPLING_X2,     /* Temp. oversampling */
-                  Adafruit_BME280::SAMPLING_X16,    /* Hum. oversampling */
-                  Adafruit_BME280::SAMPLING_X16,    /* Pressure oversampling */
-                  Adafruit_BME280::FILTER_X16,      /* Filtering. */
-                  Adafruit_BME280::STANDBY_MS_500); /* Standby time. */
+void showFont(const char name[], const GFXfont* f)
+{
+  display.fillScreen(GxEPD_WHITE);
+  display.setTextColor(GxEPD_BLACK);
+  display.setFont(f);
+  display.setCursor(0, 0);
+  display.println();
+  display.println(name);
+  display.println(" !\"#$%&'()*+,-./");
+  display.println("0123456789:;<=>?");
+  display.setTextColor(GxEPD_DARKGREY);
+  display.println("@ABCDEFGHIJKLMNO");
+  display.setTextColor(GxEPD_LIGHTGREY);
+  display.println("PQRSTUVWXYZ[\\]^_");
+#if defined(HAS_RED_COLOR)
+  display.setTextColor(GxEPD_RED);
+#endif
+  display.println("`abcdefghijklmno");
+  display.println("pqrstuvwxyz{|}~ ");
+  display.update();
+  delay(5000);
 }
 
 // run forever
 void loop()
 {
   frameCounter++;
+  showFont("FreeMonoBold9pt7b", &FreeMonoBold9pt7b);
+  showFont("FreeMonoBold12pt7b", &FreeMonoBold12pt7b);
+  showFont("FreeMonoBold18pt7b", &FreeMonoBold18pt7b);
+  showFont("FreeMonoBold24pt7b", &FreeMonoBold24pt7b);
 
-  // read current measurements
-  currentTemperatureCelsius = bme.readTemperature();
-  currentHumidityPercent = bme.readHumidity();
-  currentPressurePascal = bme.readPressure() + PRESSURE_MEASUREMENT_CALIBRATION;
-
-  // update statistics for each measurement
-  tempStats.update(currentTemperatureCelsius);
-  humStats.update(currentHumidityPercent);
-  pressStats.update(currentPressurePascal / 100.);
-
-  Serial.print("\nTemperature = ");
-  Serial.print(currentTemperatureCelsius);
-  Serial.print(" °C (▼");
-  Serial.print(tempStats.min);
-  Serial.print(" ▲");
-  Serial.print(tempStats.max);
-  Serial.print(")");
-
-  Serial.print("    Humidity = ");
-  Serial.print(currentHumidityPercent);
-  Serial.print(" % (▼");
-  Serial.print(humStats.min);
-  Serial.print(" ▲");
-  Serial.print(humStats.max);
-  Serial.print(")");
-
-  Serial.print("    Pressure = ");
-  Serial.print(currentPressurePascal / 100.); // convert to hPa
-  Serial.print(" hPa (▼");
-  Serial.print(pressStats.min);
-  Serial.print(" ▲");
-  Serial.print(pressStats.max);
-  Serial.print(")");
-
-  Serial.print("    Altitude = ");
-  Serial.print(bme.readAltitude(SEALEVEL_PRESSURE + SEALEVEL_PRESSURE_CALIBRATION));
-  Serial.print(" m");
-
-  delay(2000);
+  // display.drawPicture(BitmapExample3, BitmapExample4, sizeof(BitmapExample3), sizeof(BitmapExample4));
+  // delay(5000);
+  // display.drawPicture(BitmapExample1, BitmapExample2, sizeof(BitmapExample1), sizeof(BitmapExample2));
+  // delay(5000);
 }
+
+
