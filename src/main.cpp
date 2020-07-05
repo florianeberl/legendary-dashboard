@@ -761,7 +761,8 @@ void loop()
   {
     if (!(counter1h % 7))
     {
-      wisdomText = random(WISDOM_NUMBER_OF_TEXTS);
+      const int wisdomNumberOfTexts = static_cast<int>(wisdomTexts.size());
+      wisdomText = random(wisdomNumberOfTexts);
     }
     counter1h++;
   }

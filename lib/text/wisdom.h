@@ -4,9 +4,6 @@
 #include <avr/pgmspace.h>
 #endif
 
-// I did not find a way to get the length of the array
-#define WISDOM_NUMBER_OF_TEXTS          (47)
-
 // Latin-1 character codes
 // ä: "\xe4"
 // ü: "\xfc"
@@ -16,7 +13,7 @@
 // Ü: "\xdc"
 // ß: "\xdf"
 
-const String wisdomTexts [] PROGMEM = {
+const std::vector<String> wisdomTexts PROGMEM = {
     // Bullshit Bingo
     "Bingo 1: It works on my Machine!",
     "Bingo 2: It worked yesterday!",
